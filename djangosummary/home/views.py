@@ -17,24 +17,25 @@ def index(request):
 @csrf_exempt
 def results(request):
     # context = summarize_gensim(request)
-    print(request.method)
-
     context = {}
-    print(request.POST)
     if request.method == "POST":
         youtube_url = request.POST.get('url')
-        print(youtube_url)
+        language = request.POST.get('language')
+        slider_value = float(request.POST.get('slider'))
     end_url = re.findall('v=.*', youtube_url)
-    youtube_caption_url = f'http://video.google.com/timedtext?lang=fr&{end_url[0]}'
-
+    print(youtube_url)
+    print(language)
+    youtube_caption_url = f'http://video.google.com/timedtext?lang={language}&{end_url[0]}'
     reponse = req.get(youtube_caption_url)
-
+    print("ici")
+    if reponse.text == "":
+        return HttpResponse(json.dumps({"resume": "It's complicated to create a summary since the video does not have subtitles."}, ensure_ascii=False).encode('utf8'),
+                            content_type="application/json")
     soup = BeautifulSoup(reponse.content, 'html.parser')  # the parser that suits to the html
     text = soup.text.replace("\n", " ").replace("&quot", "").replace(".", ". ").replace("&#39;", "\'").replace("…",
                                                                                                                ". ").replace(
-        "–", ". ").replace("?", "? ")
-
-    context['resume'] = summarize(text, ratio=0.05)
+        "–", ". ").replace("?", "? ").replace("\r\n", ". ")
+    context['resume'] = summarize(text, ratio=slider_value)
     print(context['resume'])
 
     # return render(request, 'home/results.html',context)
